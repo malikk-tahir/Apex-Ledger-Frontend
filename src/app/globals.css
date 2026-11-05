@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  /* Core Ledger Color Palette (Black, Gray, White, Red) */
+  --color-background: #FFFFFF;
+  --color-foreground: #09090B;
+
+  --color-card: #FFFFFF;
+  --color-card-foreground: #09090B;
+
+  --color-primary: #18181B;           /* Solid Black */
+  --color-primary-foreground: #FAFAFA;
+
+  --color-secondary: #F4F4F5;         /* Light Gray */
+  --color-secondary-foreground: #18181B;
+
+  --color-muted: #F4F4F5;
+  --color-muted-foreground: #71717A;
+
+  --color-accent: #DC2626;            /* Crimson Red */
+  --color-accent-foreground: #FAFAFA;
+
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FAFAFA;
+
+  --color-border: #E4E4E7;            /* Gray Border */
+  --color-input: #E4E4E7;
+  --color-ring: #DC2626;              /* Red Focus Ring */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Dark Mode Overrides */
+.dark {
+  --color-background: #09090B;        /* Deep Black Background */
+  --color-foreground: #FAFAFA;        /* Crisp White Text */
+
+  --color-card: #121214;              /* Dark Card Surface */
+  --color-card-foreground: #FAFAFA;
+
+  --color-primary: #FAFAFA;           /* Inverted Primary for Dark Mode */
+  --color-primary-foreground: #18181B;
+
+  --color-secondary: #27272A;         /* Dark Gray Surface */
+  --color-secondary-foreground: #FAFAFA;
+
+  --color-muted: #27272A;
+  --color-muted-foreground: #A1A1AA;
+
+  --color-accent: #be2222;            /* Brighter Crimson Red for Dark Mode */
+  --color-accent-foreground: #FAFAFA;
+
+  --color-destructive: #be2222;
+  --color-destructive-foreground: #FAFAFA;
+
+  --color-border: #27272A;            /* Dark Subtle Border */
+  --color-input: #27272A;
+  --color-ring: #be2222;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans, sans-serif);
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Global baseline styles for standard inputs, textareas, and selects */
+  input, textarea, select {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    border-color: var(--color-border);
+    border-width: 1px;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--color-ring);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  }
 }
