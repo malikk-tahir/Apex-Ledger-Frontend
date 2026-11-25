@@ -1,9 +1,14 @@
 "use client";
 
 import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { paymentSchema, PaymentFormValues, PAYMENT_TYPES } from "@/schemaValidators/clientPaymentSchema";
+import {
+  paymentSchema,
+  PaymentFormValues,
+  PAYMENT_CATEGORIES,
+  PAYMENT_TYPES,
+} from "@/schemaValidators/clientPaymentSchema";
 import { useAddClientPayment } from "@/hooks/useClientPayments";
 import ImageUpload from "@/components/ImageUpload";
 
@@ -38,16 +43,22 @@ interface AddPaymentModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function AddPayment({ clientId, open, onOpenChange }: AddPaymentModalProps) {
+export default function AddPayment({
+  clientId,
+  open,
+  onOpenChange,
+}: AddPaymentModalProps) {
   const { mutate: addPayment, isPending } = useAddClientPayment();
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema) as any,
     defaultValues: {
+      category: "client_amount",
       amountPaid: 0,
-      monthYear: new Date().toISOString().slice(0, 7), 
+      monthYear: new Date().toISOString().slice(0, 7),
       paymentType: "bank_transfer",
       paymentDate: new Date().toISOString().split("T")[0] as any,
+      note: "",
       file: null,
     },
   });
@@ -61,12 +72,17 @@ export default function AddPayment({ clientId, open, onOpenChange }: AddPaymentM
 
   const onSubmit = (values: PaymentFormValues) => {
     const formData = new FormData();
+    formData.append("category", values.category || "client_amount");
     formData.append("amountPaid", String(values.amountPaid));
     formData.append("monthYear", values.monthYear);
     formData.append("paymentType", values.paymentType);
-    
+
     if (values.paymentDate) {
       formData.append("paymentDate", new Date(values.paymentDate).toISOString());
+    }
+
+    if (values.note && values.note.trim()) {
+      formData.append("note", values.note.trim());
     }
 
     if (values.file instanceof File) {
@@ -88,15 +104,44 @@ export default function AddPayment({ clientId, open, onOpenChange }: AddPaymentM
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent className="sm:max-w-lg bg-card border border-border text-foreground max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-bold">Record Client Payment</AlertDialogTitle>
+          <AlertDialogTitle className="text-xl font-bold">
+            Record Client Payment
+          </AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-muted-foreground">
-            Log an incoming payment, select the billing month, and attach a payment screenshot receipt.
+            Log a client retainer payment or expense, select the billing month, add an optional note, and attach a receipt.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
-            
+            {/* Payment Category */}
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-[11px] sm:text-xs font-semibold uppercase text-muted-foreground">
+                    Payment Category
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-background border-border text-xs sm:text-sm text-foreground h-10 rounded-xl">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-card border-border text-foreground">
+                      {PAYMENT_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-xs font-medium text-destructive mt-1" />
+                </FormItem>
+              )}
+            />
+
             {/* Amount Paid */}
             <FormField
               control={form.control}
@@ -131,7 +176,7 @@ export default function AddPayment({ clientId, open, onOpenChange }: AddPaymentM
                   <FormControl>
                     <Input
                       type="text"
-                      placeholder="2026-10"
+                      placeholder="2026-11"
                       {...field}
                       className="bg-background border-border text-xs sm:text-sm text-foreground block w-full px-3 h-10 rounded-xl"
                     />
@@ -187,6 +232,29 @@ export default function AddPayment({ clientId, open, onOpenChange }: AddPaymentM
                         className="bg-background border-border text-xs sm:text-sm text-foreground block w-full px-3 h-10 rounded-xl dark:[color-scheme:dark] dark:invert"
                       />
                     </div>
+                  </FormControl>
+                  <FormMessage className="text-xs font-medium text-destructive mt-1" />
+                </FormItem>
+              )}
+            />
+
+            {/* Note */}
+            <FormField
+              control={form.control}
+              name="note"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-[11px] sm:text-xs font-semibold uppercase text-muted-foreground">
+                    Note (Optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="e.g., Shoot fuel or influencer advance"
+                      {...field}
+                      value={field.value ?? ""}
+                      className="bg-background border-border text-xs sm:text-sm text-foreground block w-full px-3 h-10 rounded-xl"
+                    />
                   </FormControl>
                   <FormMessage className="text-xs font-medium text-destructive mt-1" />
                 </FormItem>

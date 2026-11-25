@@ -7,9 +7,18 @@ import { toast } from "sonner";
 // ==========================================
 // 1. GET ALL PAYMENTS (Paginated list)
 // ==========================================
+export type ClientPaymentCategory =
+  | "client_amount"
+  | "influencer_expense"
+  | "fuel_expense";
+
 export const useClientPayments = (
   clientId: string,
-  queryParams?: { page?: number; keyword?: string }
+  queryParams?: {
+    page?: number;
+    keyword?: string;
+    category?: ClientPaymentCategory | "";
+  }
 ) => {
   return useQuery({
     queryKey: ["client-payments", clientId, queryParams],
@@ -17,9 +26,15 @@ export const useClientPayments = (
       const params = new URLSearchParams();
       if (queryParams?.page) params.append("page", queryParams.page.toString());
       if (queryParams?.keyword) params.append("keyword", queryParams.keyword);
+      if (queryParams?.category) params.append("category", queryParams.category);
 
-      const response = await api.get(`/clients/${clientId}/payments?${params.toString()}`);
-      return response.data; // returns { success, totalCount, totalPages, currentPage, resultsPerPage, data: payments }
+      const queryString = params.toString();
+      const url = queryString
+        ? `/clients/${clientId}/payments?${queryString}`
+        : `/clients/${clientId}/payments`;
+
+      const response = await api.get(url);
+      return response.data; // { success, totalCount, totalPages, currentPage, resultsPerPage, data: payments }
     },
     enabled: Boolean(clientId),
   });

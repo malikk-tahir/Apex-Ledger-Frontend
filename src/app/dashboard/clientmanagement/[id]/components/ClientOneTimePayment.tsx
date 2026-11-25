@@ -4,12 +4,12 @@ import React, { useState } from "react";
 import { useClientPayments, useDeleteClientPayment } from "@/hooks/useClientPayments";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  FileText, 
-  Trash2, 
-  Eye, 
-  AlertCircle, 
-  Wallet 
+import {
+  FileText,
+  Trash2,
+  Eye,
+  AlertCircle,
+  Wallet,
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import ImagePreviewDialog from "@/components/ImagePreviewDialogue";
@@ -20,9 +20,12 @@ interface ClientOneTimePaymentSectionProps {
   clientType: string;
 }
 
-export default function ClientOneTimePayment({ clientId, clientType }: ClientOneTimePaymentSectionProps) {
+export default function ClientOneTimePayment({
+  clientId,
+  clientType,
+}: ClientOneTimePaymentSectionProps) {
   const isOneTime = clientType === "one_time" || clientType === "project";
-  
+
   // Pagination state
   const [page, setPage] = useState(1);
 
@@ -62,11 +65,19 @@ export default function ClientOneTimePayment({ clientId, clientType }: ClientOne
   const totalPages = data.totalPages || 1;
   const currentPage = data.currentPage || page;
 
-  const totalPaid = payments.reduce((sum: number, p: any) => sum + (p.amountPaid || 0), 0);
+  const clientCollected = payments
+    .filter((p: any) => p.category === "client_amount")
+    .reduce((sum: number, p: any) => sum + (p.amountPaid || 0), 0);
+
+  const extraExpenses = payments
+    .filter(
+      (p: any) =>
+        p.category === "influencer_expense" || p.category === "fuel_expense"
+    )
+    .reduce((sum: number, p: any) => sum + (p.amountPaid || 0), 0);
 
   return (
     <div className="space-y-6">
-      
       {/* 1. Summary Card */}
       <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -79,20 +90,35 @@ export default function ClientOneTimePayment({ clientId, clientType }: ClientOne
             </h2>
           </div>
           <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
-            {data.totalCount || payments.length} Payment(s) Recorded
+            {data.totalCount || payments.length} Record(s) Logged
           </span>
         </div>
 
-        <div className="pt-4 border-t border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm">
-          <span className="text-muted-foreground uppercase font-medium text-xs">Total Amount Collected</span>
-          <span className="font-bold text-emerald-500 text-lg">PKR {totalPaid.toLocaleString()}</span>
+        <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="flex justify-between sm:flex-col sm:justify-start gap-1">
+            <span className="text-muted-foreground uppercase font-medium text-xs">
+              Client Amount Collected
+            </span>
+            <span className="font-bold text-emerald-500 text-lg">
+              PKR {clientCollected.toLocaleString()}
+            </span>
+          </div>
+
+          <div className="flex justify-between sm:flex-col sm:justify-start sm:items-end gap-1">
+            <span className="text-muted-foreground uppercase font-medium text-xs">
+              Extra Expenses (Influencer / Fuel)
+            </span>
+            <span className="font-bold text-amber-500 text-lg">
+              PKR {extraExpenses.toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* 2. Payments Table Container */}
       <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h3 className="font-bold text-lg text-foreground tracking-tight">Logged Payments</h3>
+          <h3 className="font-bold text-lg text-foreground tracking-tight">Logged Transactions</h3>
           <span className="text-xs text-muted-foreground">One-time / Milestone invoicing</span>
         </div>
 
@@ -106,67 +132,89 @@ export default function ClientOneTimePayment({ clientId, clientType }: ClientOne
           </div>
         ) : (
           <div className="space-y-4">
-            
             {/* Responsive Table with Horizontal Scroll on Smaller Screens */}
             <div className="w-full overflow-x-auto rounded-xl border border-border">
-              <table className="w-full text-left border-collapse min-w-[600px]">
+              <table className="w-full text-left border-collapse min-w-[750px]">
                 <thead>
                   <tr className="bg-secondary/50 border-b border-border text-xs text-muted-foreground uppercase font-medium">
+                    <th className="py-3 px-4">Category</th>
                     <th className="py-3 px-4">Amount</th>
                     <th className="py-3 px-4">Method</th>
                     <th className="py-3 px-4">Billing Month</th>
                     <th className="py-3 px-4">Payment Date</th>
+                    <th className="py-3 px-4">Note</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border text-sm bg-background">
-                  {payments.map((payment: any) => (
-                    <tr key={payment._id} className="hover:bg-secondary/30 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-foreground whitespace-nowrap">
-                        PKR {payment.amountPaid?.toLocaleString()}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="text-xs px-2.5 py-1 rounded uppercase font-semibold bg-secondary text-secondary-foreground">
-                          {payment.paymentType?.replace("_", " ")}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
-                        {payment.monthYear || "N/A"}
-                      </td>
-                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
-                        {new Date(payment.paymentDate || payment.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
-                        {payment.paymentScreenshotUrl ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPreviewImage(payment.paymentScreenshotUrl)}
-                            className="border-border text-foreground hover:bg-secondary gap-1 cursor-pointer text-xs h-8 px-2.5"
-                          >
-                            <Eye className="w-3.5 h-3.5" /> Receipt
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic px-2">No receipt</span>
-                        )}
+                  {payments.map((payment: any) => {
+                    const isExpense = payment.category !== "client_amount";
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setPaymentToDelete(payment._id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer h-8 w-8 p-0"
+                    return (
+                      <tr key={payment._id} className="hover:bg-secondary/30 transition-colors">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span
+                            className={`text-xs px-2.5 py-1 rounded-full capitalize font-semibold border ${
+                              isExpense
+                                ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            }`}
+                          >
+                            {payment.category.replace("_", " ") || "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-foreground whitespace-nowrap">
+                          PKR {payment.amountPaid?.toLocaleString()}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="text-xs px-2.5 py-1 rounded uppercase font-semibold bg-secondary text-secondary-foreground">
+                            {payment.paymentType?.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                          {payment.monthYear || "N/A"}
+                        </td>
+                        <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                          {new Date(payment.paymentDate || payment.createdAt).toLocaleDateString()}
+                        </td>
+                        <td
+                          className="py-3.5 px-4 text-muted-foreground max-w-[200px] truncate"
+                          title={payment.note || ""}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                          {payment.note?.trim() ? payment.note : "—"}
+                        </td>
+                        <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
+                          {payment.paymentScreenshotUrl ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPreviewImage(payment.paymentScreenshotUrl)}
+                              className="border-border text-foreground hover:bg-secondary gap-1 cursor-pointer text-xs h-8 px-2.5"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Receipt
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic px-2">No receipt</span>
+                          )}
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPaymentToDelete(payment._id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer h-8 w-8 p-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Pagination Component */}
-            <Pagination 
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={(newPage) => setPage(newPage)}
@@ -176,9 +224,9 @@ export default function ClientOneTimePayment({ clientId, clientType }: ClientOne
       </div>
 
       {/* 3. Reusable Dialog Modals */}
-      <ImagePreviewDialog 
-        imageUrl={previewImage} 
-        onClose={() => setPreviewImage(null)} 
+      <ImagePreviewDialog
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
       />
 
       <ConfirmDeleteDialog
@@ -195,7 +243,6 @@ export default function ClientOneTimePayment({ clientId, clientType }: ClientOne
           }
         }}
       />
-
     </div>
   );
 }

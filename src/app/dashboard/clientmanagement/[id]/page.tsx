@@ -154,6 +154,8 @@ export default function SingleClientPage({ params }: PageProps) {
                 </div>
               </div>
             </div>
+            
+            
           </div>
 
           {isRetainerClient ? (
